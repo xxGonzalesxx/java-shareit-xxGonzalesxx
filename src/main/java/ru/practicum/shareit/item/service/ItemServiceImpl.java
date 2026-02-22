@@ -3,6 +3,8 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
@@ -31,7 +33,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto findById(Long id) {
         log.info("Получение вещи с id {}", id);
         Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Вещь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
         return ItemMapper.toItemDto(item);
     }
 
@@ -52,7 +54,7 @@ public class ItemServiceImpl implements ItemService {
 
         // Проверка существования пользователя
         userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         Item item = ItemMapper.toItem(itemDto);
         item.setOwnerId(userId);
@@ -65,10 +67,10 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto update(Long userId, Long itemId, ItemDto itemDto) {
         log.info("Обновление вещи {} для пользователя {}", itemId, userId);
         Item existing = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Вещь не найдена"));
+                .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
         if (!userId.equals(existing.getOwnerId())) {
-            throw new RuntimeException("Access denied");
+            throw new ForbiddenException("Доступ запрещён");
         }
 
         if (itemDto.getName() != null) {
