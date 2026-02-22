@@ -36,6 +36,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto create(UserDto userDto) {
         log.info("Создание пользователя с email {}", userDto.getEmail());
+
+        // Проверка на уникальность email
+        if (userDto.getEmail() != null) {
+            userRepository.findByEmail(userDto.getEmail())
+                    .ifPresent(u -> {
+                        throw new RuntimeException("Email уже существует");
+                    });
+        }
+
         User user = UserMapper.toUser(userDto);
         User saved = userRepository.save(user);
         return UserMapper.toUserDto(saved);
@@ -47,11 +56,17 @@ public class UserServiceImpl implements UserService {
         User existing = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
+        // Если email меняется, проверить уникальность
+        if (userDto.getEmail() != null && !userDto.getEmail().equals(existing.getEmail())) {
+            userRepository.findByEmail(userDto.getEmail())
+                    .ifPresent(u -> {
+                        throw new RuntimeException("Email уже существует");
+                    });
+            existing.setEmail(userDto.getEmail());
+        }
+
         if (userDto.getName() != null) {
             existing.setName(userDto.getName());
-        }
-        if (userDto.getEmail() != null) {
-            existing.setEmail(userDto.getEmail());
         }
 
         User updated = userRepository.update(existing);

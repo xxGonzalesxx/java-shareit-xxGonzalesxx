@@ -37,4 +37,12 @@ public class InMemoryUserRepository implements UserRepository {
     public void delete(Long id) {
         users.remove(id);
     }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return users.values().stream()
+                .filter(user -> email.equals(user.getEmail()))
+                .findFirst();
+    }
+
 }
