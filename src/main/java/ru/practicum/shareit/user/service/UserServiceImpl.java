@@ -37,12 +37,17 @@ public class UserServiceImpl implements UserService {
     public UserDto create(UserDto userDto) {
         log.info("Создание пользователя с email {}", userDto.getEmail());
 
+        // Валидация email
+        if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        if (!userDto.getEmail().contains("@")) {
+            throw new RuntimeException("Invalid email format");
+        }
+
         // Проверка на уникальность email
-        if (userDto.getEmail() != null) {
-            userRepository.findByEmail(userDto.getEmail())
-                    .ifPresent(u -> {
-                        throw new RuntimeException("Email уже существует");
-                    });
+        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
         }
 
         User user = UserMapper.toUser(userDto);
@@ -56,12 +61,14 @@ public class UserServiceImpl implements UserService {
         User existing = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        // Если email меняется, проверить уникальность
+        // Если email меняется, проверить уникальность и формат
         if (userDto.getEmail() != null && !userDto.getEmail().equals(existing.getEmail())) {
-            userRepository.findByEmail(userDto.getEmail())
-                    .ifPresent(u -> {
-                        throw new RuntimeException("Email уже существует");
-                    });
+            if (!userDto.getEmail().contains("@")) {
+                throw new RuntimeException("Invalid email format");
+            }
+            if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+                throw new RuntimeException("Email already exists");
+            }
             existing.setEmail(userDto.getEmail());
         }
 

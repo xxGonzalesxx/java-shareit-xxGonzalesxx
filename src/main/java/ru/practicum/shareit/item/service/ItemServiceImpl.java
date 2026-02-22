@@ -38,8 +38,21 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDto create(Long userId, ItemDto itemDto) {
         log.info("Создание вещи для пользователя {}", userId);
+
+        // Валидация полей
+        if (itemDto.getName() == null || itemDto.getName().isBlank()) {
+            throw new RuntimeException("Name is required");
+        }
+        if (itemDto.getDescription() == null || itemDto.getDescription().isBlank()) {
+            throw new RuntimeException("Description is required");
+        }
+        if (itemDto.getAvailable() == null) {
+            throw new RuntimeException("Available status is required");
+        }
+
+        // Проверка существования пользователя
         userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Item item = ItemMapper.toItem(itemDto);
         item.setOwnerId(userId);
