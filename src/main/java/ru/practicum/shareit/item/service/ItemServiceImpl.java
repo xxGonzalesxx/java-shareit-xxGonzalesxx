@@ -52,7 +52,7 @@ public class ItemServiceImpl implements ItemService {
 
         // Проверка существования пользователя
         userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("404"));
 
         Item item = ItemMapper.toItem(itemDto);
         item.setOwnerId(userId);
@@ -68,7 +68,7 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new RuntimeException("Вещь не найдена"));
 
         if (!userId.equals(existing.getOwnerId())) {
-            throw new RuntimeException("Только владелец может редактировать вещь");
+            throw new RuntimeException("403");
         }
 
         if (itemDto.getName() != null) {
