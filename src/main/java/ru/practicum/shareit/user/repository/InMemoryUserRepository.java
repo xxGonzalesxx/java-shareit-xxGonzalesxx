@@ -44,5 +44,4 @@ public class InMemoryUserRepository implements UserRepository {
                 .filter(user -> email.equals(user.getEmail()))
                 .findFirst();
     }
-
 }

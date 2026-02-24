@@ -3,6 +3,8 @@ package ru.practicum.shareit.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.ConflictException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.UserMapper;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
@@ -29,7 +31,7 @@ public class UserServiceImpl implements UserService {
     public UserDto findById(Long id) {
         log.info("Получение пользователя с id {}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         return UserMapper.toUserDto(user);
     }
 
@@ -37,17 +39,9 @@ public class UserServiceImpl implements UserService {
     public UserDto create(UserDto userDto) {
         log.info("Создание пользователя с email {}", userDto.getEmail());
 
-        // Валидация email
-        if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
-            throw new RuntimeException("Email is required");
-        }
-        if (!userDto.getEmail().contains("@")) {
-            throw new RuntimeException("Invalid email format");
-        }
-
-        // Проверка на уникальность email
+        // Только проверка уникальности email (формат проверит @Valid в DTO)
         if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            throw new ConflictException("Email уже существует");
         }
 
         User user = UserMapper.toUser(userDto);
@@ -59,15 +53,12 @@ public class UserServiceImpl implements UserService {
     public UserDto update(Long id, UserDto userDto) {
         log.info("Обновление пользователя с id {}", id);
         User existing = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
-        // Если email меняется, проверить уникальность и формат
+        // Если email меняется, проверить только уникальность (формат проверит @Valid)
         if (userDto.getEmail() != null && !userDto.getEmail().equals(existing.getEmail())) {
-            if (!userDto.getEmail().contains("@")) {
-                throw new RuntimeException("Invalid email format");
-            }
             if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
-                throw new RuntimeException("Email already exists");
+                throw new ConflictException("Email уже существует");
             }
             existing.setEmail(userDto.getEmail());
         }

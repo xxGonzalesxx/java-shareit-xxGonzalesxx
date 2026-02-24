@@ -3,8 +3,8 @@ package ru.practicum.shareit.item.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ForbiddenException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
@@ -40,19 +40,6 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDto create(Long userId, ItemDto itemDto) {
         log.info("Создание вещи для пользователя {}", userId);
-
-        // Валидация полей
-        if (itemDto.getName() == null || itemDto.getName().isBlank()) {
-            throw new RuntimeException("Name is required");
-        }
-        if (itemDto.getDescription() == null || itemDto.getDescription().isBlank()) {
-            throw new RuntimeException("Description is required");
-        }
-        if (itemDto.getAvailable() == null) {
-            throw new RuntimeException("Available status is required");
-        }
-
-        // Проверка существования пользователя
         userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
@@ -66,6 +53,11 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDto update(Long userId, Long itemId, ItemDto itemDto) {
         log.info("Обновление вещи {} для пользователя {}", itemId, userId);
+
+        // Проверка существования пользователя
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
         Item existing = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
