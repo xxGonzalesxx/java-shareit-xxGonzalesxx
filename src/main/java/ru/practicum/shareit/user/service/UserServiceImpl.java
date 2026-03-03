@@ -39,8 +39,7 @@ public class UserServiceImpl implements UserService {
     public UserDto create(UserDto userDto) {
         log.info("Создание пользователя с email {}", userDto.getEmail());
 
-        // Только проверка уникальности email (формат проверит @Valid в DTO)
-        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+        if (userRepository.existsByEmail(userDto.getEmail())) {
             throw new ConflictException("Email уже существует");
         }
 
@@ -55,9 +54,8 @@ public class UserServiceImpl implements UserService {
         User existing = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
-        // Если email меняется, проверить только уникальность (формат проверит @Valid)
         if (userDto.getEmail() != null && !userDto.getEmail().equals(existing.getEmail())) {
-            if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+            if (userRepository.existsByEmail(userDto.getEmail())) {
                 throw new ConflictException("Email уже существует");
             }
             existing.setEmail(userDto.getEmail());
@@ -67,13 +65,13 @@ public class UserServiceImpl implements UserService {
             existing.setName(userDto.getName());
         }
 
-        User updated = userRepository.update(existing);
+        User updated = userRepository.save(existing);
         return UserMapper.toUserDto(updated);
     }
 
     @Override
     public void delete(Long id) {
         log.info("Удаление пользователя с id {}", id);
-        userRepository.delete(id);
+        userRepository.deleteById(id);
     }
 }
