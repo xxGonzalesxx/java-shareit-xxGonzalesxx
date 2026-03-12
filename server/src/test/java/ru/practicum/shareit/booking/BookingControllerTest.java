@@ -34,7 +34,7 @@ class BookingControllerTest {
     @MockBean
     private BookingService bookingService;
 
-    private final String USER_ID_HEADER = "X-Sharer-User-Id";
+    private final String userIdHeader = "X-Sharer-User-Id";
 
     @Test
     void createBooking_ShouldReturnOk() throws Exception {
@@ -65,7 +65,7 @@ class BookingControllerTest {
 
         // Действие и проверка
         mockMvc.perform(post("/bookings")
-                        .header(USER_ID_HEADER, 2L)
+                        .header(userIdHeader, 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(bookingDto)))
                 .andExpect(status().isOk())
@@ -86,7 +86,7 @@ class BookingControllerTest {
 
         // Действие и проверка
         mockMvc.perform(patch("/bookings/1")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .param("approved", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -111,7 +111,7 @@ class BookingControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/bookings/1")
-                        .header(USER_ID_HEADER, 2L))
+                        .header(userIdHeader, 2L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.item.id").value(1))
@@ -133,7 +133,7 @@ class BookingControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/bookings")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(userIdHeader, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[1].id").value(2));
@@ -152,7 +152,7 @@ class BookingControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/bookings")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .param("state", "WAITING"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -174,7 +174,7 @@ class BookingControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/bookings/owner")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(userIdHeader, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[1].id").value(2));
@@ -193,7 +193,7 @@ class BookingControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/bookings/owner")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .param("state", "WAITING"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))

@@ -32,7 +32,7 @@ class ItemControllerTest {
     @MockBean
     private ItemService itemService;
 
-    private final String USER_ID_HEADER = "X-Sharer-User-Id";
+    private final String userIdHeader = "X-Sharer-User-Id";
 
     @Test
     void createItem_ShouldReturnOk() throws Exception {
@@ -52,7 +52,7 @@ class ItemControllerTest {
 
         // Действие и проверка
         mockMvc.perform(post("/items")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(itemToCreate)))
                 .andExpect(status().isOk())
@@ -75,7 +75,7 @@ class ItemControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/items/1")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(userIdHeader, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Дрель"));
@@ -97,7 +97,7 @@ class ItemControllerTest {
 
         // Действие и проверка
         mockMvc.perform(patch("/items/1")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateData)))
                 .andExpect(status().isOk())
@@ -122,7 +122,7 @@ class ItemControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/items")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(userIdHeader, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("Дрель"))
@@ -143,7 +143,7 @@ class ItemControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/items/search")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .param("text", "дрель"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -167,7 +167,7 @@ class ItemControllerTest {
 
         // Действие и проверка
         mockMvc.perform(post("/items/1/comment")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(commentDto)))
                 .andExpect(status().isOk())

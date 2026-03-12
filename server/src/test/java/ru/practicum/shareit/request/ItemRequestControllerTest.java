@@ -31,7 +31,7 @@ class ItemRequestControllerTest {
     @MockBean
     private ItemRequestService requestService;
 
-    private final String USER_ID_HEADER = "X-Sharer-User-Id";
+    private final String userIdHeader = "X-Sharer-User-Id";
 
     @Test
     void createRequest_ShouldReturnOk() throws Exception {
@@ -48,7 +48,7 @@ class ItemRequestControllerTest {
 
         // Действие и проверка
         mockMvc.perform(post("/requests")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(userIdHeader, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
@@ -76,7 +76,7 @@ class ItemRequestControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/requests")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(userIdHeader, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(2))
                 .andExpect(jsonPath("$[0].description").value("Нужен перфоратор"))
@@ -104,7 +104,7 @@ class ItemRequestControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/requests/all")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(userIdHeader, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(2))
                 .andExpect(jsonPath("$[0].description").value("Чужой запрос 2"))
@@ -124,7 +124,7 @@ class ItemRequestControllerTest {
 
         // Действие и проверка
         mockMvc.perform(get("/requests/1")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(userIdHeader, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.description").value("Нужна дрель"))
