@@ -53,6 +53,7 @@ public class BookingController {
 		log.info("Approve booking {} by user {}, approved={}", bookingId, userId, approved);
 		return bookingClient.approveBooking(userId, bookingId, approved);
 	}
+
 	@GetMapping("/owner")
 	public ResponseEntity<Object> getOwnerBookings(
 			@RequestHeader("X-Sharer-User-Id") long userId,
