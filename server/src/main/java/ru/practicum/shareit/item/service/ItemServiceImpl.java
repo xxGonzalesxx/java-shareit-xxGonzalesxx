@@ -20,10 +20,12 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,7 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository requestRepository;
 
     @Override
     public List<ItemDto> findAllByUser(Long userId) {
@@ -79,8 +82,8 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
         List<Comment> comments = commentRepository.findByItemIdOrderByCreatedDesc(id);
+        log.info("Для вещи {} найдено комментариев: {}", id, comments.size());
 
-        // Для обычного пользователя не показываем даты бронирований
         return ItemMapper.toItemDtoWithBookingsAndComments(item, null, null, comments);
     }
 
@@ -91,6 +94,11 @@ public class ItemServiceImpl implements ItemService {
 
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("Пользователь не найден");
+        }
+
+        if (itemDto.getRequestId() != null) {
+            requestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException("Запрос не найден"));
         }
 
         Item item = ItemMapper.toItem(itemDto);
@@ -136,6 +144,11 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDto> search(String text) {
         log.info("Поиск вещей по тексту: {}", text);
+
+        if (text == null || text.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return itemRepository.search(text).stream()
                 .map(ItemMapper::toItemDto)
                 .collect(Collectors.toList());
@@ -152,12 +165,17 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
-        // Проверка, что пользователь брал вещь в аренду
-        boolean hasBooked = bookingRepository.existsByBookerIdAndItemIdAndStatusAndEndBefore(
-                userId, itemId, BookingStatus.APPROVED, LocalDateTime.now());
+        // Проверка, что пользователь брал вещь в аренду И аренда завершилась
+        boolean hasCompletedBooking = bookingRepository
+                .existsByBookerIdAndItemIdAndStatusAndEndBefore(
+                        userId, itemId, BookingStatus.APPROVED, LocalDateTime.now());
 
-        if (!hasBooked) {
-            throw new ValidationException("Пользователь не брал эту вещь в аренду");
+        log.info("Проверка завершённого бронирования для пользователя {} и вещи {}: {}",
+                userId, itemId, hasCompletedBooking);
+
+        if (!hasCompletedBooking) {
+            log.warn("Пользователь {} не имеет завершённого бронирования вещи {}", userId, itemId);
+            throw new ValidationException("Вы можете оставить комментарий только после завершения аренды");
         }
 
         if (text == null || text.trim().isEmpty()) {
@@ -166,6 +184,7 @@ public class ItemServiceImpl implements ItemService {
 
         Comment comment = CommentMapper.toComment(text, item, user);
         Comment savedComment = commentRepository.save(comment);
+        log.info("Комментарий сохранён с id: {} для вещи: {}", savedComment.getId(), itemId);
 
         return CommentMapper.toCommentDto(savedComment);
     }

@@ -110,7 +110,7 @@ public class BookingServiceImpl implements BookingService {
         // Проверка прав: автор бронирования или владелец вещи
         if (!booking.getBooker().getId().equals(userId) &&
                 !booking.getItem().getOwnerId().equals(userId)) {
-            throw new ForbiddenException("Нет прав для просмотра");
+            throw new NotFoundException("Нет доступа к просмотру этого бронирования");
         }
         return BookingMapper.toBookingResponseDto(booking);
     }
