@@ -106,8 +106,8 @@ class ItemServiceImplIntegrationTest {
         updateDto.setDescription("Новое описание");
         updateDto.setAvailable(false);
 
-        // Действие
-        ItemDto updatedItem = itemService.update(savedItem.getId(), owner.getId(), updateDto);
+        // Действие - ИСПРАВЛЕНО: правильный порядок параметров
+        ItemDto updatedItem = itemService.update(owner.getId(), savedItem.getId(), updateDto);
 
         // Проверка
         assertEquals("Новое имя", updatedItem.getName());
@@ -124,8 +124,8 @@ class ItemServiceImplIntegrationTest {
         ItemDto updateDto = new ItemDto();
         updateDto.setName("Только имя");
 
-        // Действие
-        ItemDto updatedItem = itemService.update(savedItem.getId(), owner.getId(), updateDto);
+        // Действие - ИСПРАВЛЕНО: правильный порядок параметров
+        ItemDto updatedItem = itemService.update(owner.getId(), savedItem.getId(), updateDto);
 
         // Проверка
         assertEquals("Только имя", updatedItem.getName());
@@ -141,9 +141,9 @@ class ItemServiceImplIntegrationTest {
         ItemDto updateDto = new ItemDto();
         updateDto.setName("Хакер");
 
-        // Действие и проверка - ИСПРАВЛЕНО!
+        // Действие и проверка - ИСПРАВЛЕНО: booker пытается обновить вещь owner
         ForbiddenException exception = assertThrows(ForbiddenException.class,
-                () -> itemService.update(savedItem.getId(), booker.getId(), updateDto));
+                () -> itemService.update(booker.getId(), savedItem.getId(), updateDto));
 
         assertEquals("Доступ запрещён", exception.getMessage());
     }
@@ -222,7 +222,7 @@ class ItemServiceImplIntegrationTest {
 
     @Test
     void addComment_WithUnknownItem_ShouldThrowException() {
-        // Действие и проверка - ИСПРАВЛЕНО!
+        // Действие и проверка
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> itemService.addComment(booker.getId(), 999L, "Комментарий"));
 

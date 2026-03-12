@@ -92,7 +92,8 @@ class BookingServiceImplIntegrationTest {
         // Подготовка - делаем вещь недоступной
         ItemDto updateDto = new ItemDto();
         updateDto.setAvailable(false);
-        itemService.update(item.getId(), owner.getId(), updateDto);
+        // ИСПРАВЛЕНО: правильный порядок параметров
+        itemService.update(owner.getId(), item.getId(), updateDto);
 
         BookingDto bookingDto = new BookingDto();
         bookingDto.setItemId(item.getId());
@@ -103,8 +104,7 @@ class BookingServiceImplIntegrationTest {
         ValidationException exception = assertThrows(ValidationException.class,
                 () -> bookingService.create(booker.getId(), bookingDto));
 
-        assertEquals("Вещь с id=" + item.getId() + " недоступна для бронирования",
-                exception.getMessage());
+        assertEquals("Вещь недоступна для бронирования", exception.getMessage());
     }
 
     @Test

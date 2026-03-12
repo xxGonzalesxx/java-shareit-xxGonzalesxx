@@ -110,19 +110,19 @@ class ItemRequestServiceImplIntegrationTest {
         // Подготовка
         ItemRequestDto request1 = new ItemRequestDto();
         request1.setDescription("Нужна дрель");
-        requestService.create(requestor.getId(), request1);
+        requestService.create(requestor.getId(), request1);  // создан раньше
 
         ItemRequestDto request2 = new ItemRequestDto();
         request2.setDescription("Нужен перфоратор");
-        requestService.create(requestor.getId(), request2);
+        requestService.create(requestor.getId(), request2);  // создан позже
 
         // Действие
         List<ItemRequestResponseDto> requests = requestService.getUserRequests(requestor.getId());
 
         // Проверка (должны быть отсортированы от новых к старым)
         assertEquals(2, requests.size());
-        assertEquals("Нужен перфоратор", requests.get(0).getDescription());
-        assertEquals("Нужна дрель", requests.get(1).getDescription());
+        assertEquals("Нужен перфоратор", requests.get(0).getDescription());  // новый - перфоратор
+        assertEquals("Нужна дрель", requests.get(1).getDescription());       // старый - дрель
     }
 
     @Test
