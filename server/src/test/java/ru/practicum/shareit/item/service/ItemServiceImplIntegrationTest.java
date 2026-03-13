@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
@@ -227,5 +228,44 @@ class ItemServiceImplIntegrationTest {
                 () -> itemService.addComment(booker.getId(), 999L, "Комментарий"));
 
         assertEquals("Вещь не найдена", exception.getMessage());
+    }
+
+    @Test
+    void delete_ShouldRemoveItem() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        itemService.delete(savedItem.getId());
+
+        assertThrows(NotFoundException.class,
+                () -> itemService.findById(savedItem.getId()));
+    }
+
+    @Test
+    void create_WithWrongRequestId_ShouldThrowException() {
+        itemDto.setRequestId(999L);
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> itemService.create(owner.getId(), itemDto));
+
+        assertEquals("Запрос не найден", exception.getMessage());
+    }
+
+    @Test
+    void addComment_WithoutBooking_ShouldThrowException() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> itemService.addComment(booker.getId(), savedItem.getId(), "Отзыв"));
+
+        assertEquals("Вы можете оставить комментарий только после завершения аренды",
+                exception.getMessage());
+    }
+
+    @Test
+    void addComment_WithEmptyText_ShouldThrowException() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        assertThrows(ValidationException.class,
+                () -> itemService.addComment(booker.getId(), savedItem.getId(), ""));
     }
 }
