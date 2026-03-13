@@ -68,26 +68,6 @@ class BookingControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    /*@Test
-    void getBookings_whenInvalidFromParameter_thenReturnBadRequest() throws Exception {
-        mockMvc.perform(get("/bookings")
-                        .header("X-Sharer-User-Id", userId)
-                        .param("state", "ALL")
-                        .param("from", "-1")
-                        .param("size", "10"))
-                .andExpect(status().isBadRequest());
-    }*/
-
-    /*@Test
-    void getBookings_whenInvalidSizeParameter_thenReturnBadRequest() throws Exception {
-        mockMvc.perform(get("/bookings")
-                        .header("X-Sharer-User-Id", userId)
-                        .param("state", "ALL")
-                        .param("from", "0")
-                        .param("size", "0"))
-                .andExpect(status().isBadRequest());
-    }*/
-
     @Test
     void bookItem_whenValidRequest_thenReturnOk() throws Exception {
         when(bookingClient.bookItem(anyLong(), any(BookItemRequestDto.class)))
