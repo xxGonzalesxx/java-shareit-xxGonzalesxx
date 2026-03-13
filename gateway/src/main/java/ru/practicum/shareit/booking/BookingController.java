@@ -1,9 +1,11 @@
 package ru.practicum.shareit.booking;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -65,5 +67,10 @@ public class BookingController {
 				.orElseThrow(() -> new IllegalArgumentException("Unknown state: " + stateParam));
 		log.info("Get owner bookings with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
 		return bookingClient.getOwnerBookings(userId, state, from, size);
+	}
+
+	@ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class})
+	public ResponseEntity<String> handleIllegalArgumentException(Exception e) {
+		return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 	}
 }

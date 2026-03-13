@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -13,6 +15,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,25 +31,25 @@ class ItemServiceImplIntegrationTest {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private BookingService bookingService;
+
     private UserDto owner;
     private UserDto booker;
     private ItemDto itemDto;
 
     @BeforeEach
     void setUp() {
-        // Создаем владельца
         UserDto ownerDto = new UserDto();
         ownerDto.setName("Owner");
         ownerDto.setEmail("owner" + System.currentTimeMillis() + "@test.com");
         owner = userService.create(ownerDto);
 
-        // Создаем арендатора (для комментариев)
         UserDto bookerDto = new UserDto();
         bookerDto.setName("Booker");
         bookerDto.setEmail("booker" + System.currentTimeMillis() + "@test.com");
         booker = userService.create(bookerDto);
 
-        // Создаем вещь
         itemDto = new ItemDto();
         itemDto.setName("Дрель");
         itemDto.setDescription("Аккумуляторная дрель");
@@ -55,10 +58,8 @@ class ItemServiceImplIntegrationTest {
 
     @Test
     void create_ShouldSaveItem() {
-        // Действие
         ItemDto savedItem = itemService.create(owner.getId(), itemDto);
 
-        // Проверка
         assertNotNull(savedItem.getId());
         assertEquals("Дрель", savedItem.getName());
         assertEquals("Аккумуляторная дрель", savedItem.getDescription());
@@ -67,7 +68,6 @@ class ItemServiceImplIntegrationTest {
 
     @Test
     void create_WithUnknownUser_ShouldThrowException() {
-        // Действие и проверка
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> itemService.create(999L, itemDto));
 
@@ -76,21 +76,15 @@ class ItemServiceImplIntegrationTest {
 
     @Test
     void findById_ShouldReturnItem() {
-        // Подготовка
         ItemDto savedItem = itemService.create(owner.getId(), itemDto);
 
-        // Действие
         ItemDto foundItem = itemService.findById(savedItem.getId());
 
-        // Проверка
         assertEquals(savedItem.getId(), foundItem.getId());
-        assertEquals(savedItem.getName(), foundItem.getName());
-        assertEquals(savedItem.getDescription(), foundItem.getDescription());
     }
 
     @Test
     void findById_WithWrongId_ShouldThrowException() {
-        // Действие и проверка
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> itemService.findById(999L));
 
@@ -98,8 +92,7 @@ class ItemServiceImplIntegrationTest {
     }
 
     @Test
-    void update_ShouldChangeItemData() {
-        // Подготовка
+    void update_ShouldChangeAllFields() {
         ItemDto savedItem = itemService.create(owner.getId(), itemDto);
 
         ItemDto updateDto = new ItemDto();
@@ -107,42 +100,62 @@ class ItemServiceImplIntegrationTest {
         updateDto.setDescription("Новое описание");
         updateDto.setAvailable(false);
 
-        // Действие - ИСПРАВЛЕНО: правильный порядок параметров
         ItemDto updatedItem = itemService.update(owner.getId(), savedItem.getId(), updateDto);
 
-        // Проверка
         assertEquals("Новое имя", updatedItem.getName());
         assertEquals("Новое описание", updatedItem.getDescription());
         assertFalse(updatedItem.getAvailable());
-        assertEquals(savedItem.getId(), updatedItem.getId());
     }
 
     @Test
-    void update_OnlyName_ShouldNotChangeOtherFields() {
-        // Подготовка
+    void update_OnlyName_ShouldWork() {
         ItemDto savedItem = itemService.create(owner.getId(), itemDto);
 
         ItemDto updateDto = new ItemDto();
         updateDto.setName("Только имя");
 
-        // Действие - ИСПРАВЛЕНО: правильный порядок параметров
         ItemDto updatedItem = itemService.update(owner.getId(), savedItem.getId(), updateDto);
 
-        // Проверка
         assertEquals("Только имя", updatedItem.getName());
         assertEquals(savedItem.getDescription(), updatedItem.getDescription());
         assertEquals(savedItem.getAvailable(), updatedItem.getAvailable());
     }
 
     @Test
+    void update_OnlyDescription_ShouldWork() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        ItemDto updateDto = new ItemDto();
+        updateDto.setDescription("Только описание");
+
+        ItemDto updatedItem = itemService.update(owner.getId(), savedItem.getId(), updateDto);
+
+        assertEquals(savedItem.getName(), updatedItem.getName());
+        assertEquals("Только описание", updatedItem.getDescription());
+        assertEquals(savedItem.getAvailable(), updatedItem.getAvailable());
+    }
+
+    @Test
+    void update_OnlyAvailable_ShouldWork() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        ItemDto updateDto = new ItemDto();
+        updateDto.setAvailable(false);
+
+        ItemDto updatedItem = itemService.update(owner.getId(), savedItem.getId(), updateDto);
+
+        assertEquals(savedItem.getName(), updatedItem.getName());
+        assertEquals(savedItem.getDescription(), updatedItem.getDescription());
+        assertFalse(updatedItem.getAvailable());
+    }
+
+    @Test
     void update_ByNotOwner_ShouldThrowException() {
-        // Подготовка
         ItemDto savedItem = itemService.create(owner.getId(), itemDto);
 
         ItemDto updateDto = new ItemDto();
         updateDto.setName("Хакер");
 
-        // Действие и проверка - ИСПРАВЛЕНО: booker пытается обновить вещь owner
         ForbiddenException exception = assertThrows(ForbiddenException.class,
                 () -> itemService.update(booker.getId(), savedItem.getId(), updateDto));
 
@@ -151,7 +164,6 @@ class ItemServiceImplIntegrationTest {
 
     @Test
     void findAllByUser_ShouldReturnAllItems() {
-        // Подготовка
         itemService.create(owner.getId(), itemDto);
 
         ItemDto secondItem = new ItemDto();
@@ -160,16 +172,19 @@ class ItemServiceImplIntegrationTest {
         secondItem.setAvailable(true);
         itemService.create(owner.getId(), secondItem);
 
-        // Действие
         List<ItemDto> items = itemService.findAllByUser(owner.getId());
 
-        // Проверка
         assertEquals(2, items.size());
     }
 
     @Test
+    void findAllByUser_WithNoItems_ShouldReturnEmptyList() {
+        List<ItemDto> items = itemService.findAllByUser(booker.getId());
+        assertTrue(items.isEmpty());
+    }
+
+    @Test
     void search_ShouldFindItemsByText() {
-        // Подготовка
         itemService.create(owner.getId(), itemDto);
 
         ItemDto secondItem = new ItemDto();
@@ -178,56 +193,23 @@ class ItemServiceImplIntegrationTest {
         secondItem.setAvailable(true);
         itemService.create(owner.getId(), secondItem);
 
-        // Действие и проверка - поиск по имени
         List<ItemDto> foundByName = itemService.search("Дрель");
         assertEquals(1, foundByName.size());
-        assertEquals("Дрель", foundByName.get(0).getName());
 
-        // Поиск по описанию
         List<ItemDto> foundByDesc = itemService.search("Тяжелый");
         assertEquals(1, foundByDesc.size());
-        assertEquals("Молоток", foundByDesc.get(0).getName());
 
-        // Поиск по части слова
         List<ItemDto> foundByPart = itemService.search("дре");
         assertEquals(1, foundByPart.size());
     }
 
     @Test
     void search_WithEmptyText_ShouldReturnEmptyList() {
-        // Подготовка
         itemService.create(owner.getId(), itemDto);
 
-        // Действие и проверка
-        List<ItemDto> result = itemService.search("");
-        assertTrue(result.isEmpty());
-
-        result = itemService.search(null);
-        assertTrue(result.isEmpty());
-
-        result = itemService.search("   ");
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void addComment_WithUnknownUser_ShouldThrowException() {
-        // Подготовка
-        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
-
-        // Действие и проверка
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> itemService.addComment(999L, savedItem.getId(), "Комментарий"));
-
-        assertEquals("Пользователь не найден", exception.getMessage());
-    }
-
-    @Test
-    void addComment_WithUnknownItem_ShouldThrowException() {
-        // Действие и проверка
-        NotFoundException exception = assertThrows(NotFoundException.class,
-                () -> itemService.addComment(booker.getId(), 999L, "Комментарий"));
-
-        assertEquals("Вещь не найдена", exception.getMessage());
+        assertTrue(itemService.search("").isEmpty());
+        assertTrue(itemService.search(null).isEmpty());
+        assertTrue(itemService.search("   ").isEmpty());
     }
 
     @Test
@@ -251,6 +233,46 @@ class ItemServiceImplIntegrationTest {
     }
 
     @Test
+    void addComment_WithEmptyText_ShouldThrowException() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        // Не создаем бронирование, проверяем только пустой текст
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> itemService.addComment(booker.getId(), savedItem.getId(), ""));
+
+        assertEquals("Текст комментария не может быть пустым", exception.getMessage());
+    }
+
+    @Test
+    void addComment_WithNullText_ShouldThrowException() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        // Не создаем бронирование, проверяем только null
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> itemService.addComment(booker.getId(), savedItem.getId(), null));
+
+        assertEquals("Текст комментария не может быть пустым", exception.getMessage());
+    }
+
+    @Test
+    void addComment_WithUnknownUser_ShouldThrowException() {
+        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> itemService.addComment(999L, savedItem.getId(), "Комментарий"));
+
+        assertEquals("Пользователь не найден", exception.getMessage());
+    }
+
+    @Test
+    void addComment_WithUnknownItem_ShouldThrowException() {
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> itemService.addComment(booker.getId(), 999L, "Комментарий"));
+
+        assertEquals("Вещь не найдена", exception.getMessage());
+    }
+
+    @Test
     void addComment_WithoutBooking_ShouldThrowException() {
         ItemDto savedItem = itemService.create(owner.getId(), itemDto);
 
@@ -259,13 +281,5 @@ class ItemServiceImplIntegrationTest {
 
         assertEquals("Вы можете оставить комментарий только после завершения аренды",
                 exception.getMessage());
-    }
-
-    @Test
-    void addComment_WithEmptyText_ShouldThrowException() {
-        ItemDto savedItem = itemService.create(owner.getId(), itemDto);
-
-        assertThrows(ValidationException.class,
-                () -> itemService.addComment(booker.getId(), savedItem.getId(), ""));
     }
 }

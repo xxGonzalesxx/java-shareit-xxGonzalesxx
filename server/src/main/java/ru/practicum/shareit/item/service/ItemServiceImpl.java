@@ -159,13 +159,19 @@ public class ItemServiceImpl implements ItemService {
     public CommentDto addComment(Long userId, Long itemId, String text) {
         log.info("Добавление комментария к вещи {} от пользователя {}", itemId, userId);
 
+        // 1. Сначала проверяем текст - это самая быстрая и простая проверка
+        if (text == null || text.trim().isEmpty()) {
+            throw new ValidationException("Текст комментария не может быть пустым");
+        }
+
+        // 2. Потом проверяем существование пользователя и вещи
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
-        // Проверка, что пользователь брал вещь в аренду И аренда завершилась
+        // 3. И только потом проверяем сложную бизнес-логику с бронированиями
         boolean hasCompletedBooking = bookingRepository
                 .existsByBookerIdAndItemIdAndStatusAndEndBefore(
                         userId, itemId, BookingStatus.APPROVED, LocalDateTime.now());
@@ -176,10 +182,6 @@ public class ItemServiceImpl implements ItemService {
         if (!hasCompletedBooking) {
             log.warn("Пользователь {} не имеет завершённого бронирования вещи {}", userId, itemId);
             throw new ValidationException("Вы можете оставить комментарий только после завершения аренды");
-        }
-
-        if (text == null || text.trim().isEmpty()) {
-            throw new ValidationException("Текст комментария не может быть пустым");
         }
 
         Comment comment = CommentMapper.toComment(text, item, user);
